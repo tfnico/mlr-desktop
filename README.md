@@ -103,14 +103,49 @@ This will start a development server with your Go backend and a Vite frontend se
    - Click "Save to File" to export the transformed data
    - Copy the generated command to use mlr directly in your terminal
 
+## CI/CD and Downloads
+
+This project uses GitHub Actions to automatically build executables for multiple platforms:
+
+- **Linux** (x86_64)
+- **macOS** (Intel and Apple Silicon)
+- **Windows** (x86_64)
+
+Builds are automatically triggered on:
+- Push to `main` branch
+- Pull requests
+- Version tags (e.g., `v1.0.0`)
+
+### Downloading Pre-built Binaries
+
+1. Go to the [Releases](../../releases) page
+2. Download the appropriate binary for your platform:
+   - `mlr-desktop-linux` - Linux x86_64
+   - `mlr-desktop-darwin-amd64` - macOS Intel
+   - `mlr-desktop-darwin-arm64` - macOS Apple Silicon (M1/M2/M3)
+   - `mlr-desktop-windows` - Windows x86_64
+3. Extract and run the executable
+
+### Creating a Release
+
+To create a new release with pre-built binaries:
+
+```bash
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+The GitHub Actions workflow will automatically build for all platforms and create a GitHub release with the binaries attached.
+
 ## Project Structure
 
-- `app.go` - Go backend with mlr command execution
+- `app.go` - Go backend using Miller library directly for data transformations
 - `frontend/src/App.jsx` - Main React application
 - `frontend/src/components/` - React components
   - `InputSection.jsx` - Input data and format configuration
   - `VerbBuilder.jsx` - Transformation pipeline builder
   - `OutputPreview.jsx` - Output display and export
+- `.github/workflows/build.yml` - GitHub Actions CI/CD for multi-platform builds
 
 ## License
 

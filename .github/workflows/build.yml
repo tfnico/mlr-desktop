@@ -1,0 +1,134 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux build
+          - platform: linux/amd64
+            os: ubuntu-latest
+            build-name: linux
+            build-flags: "-tags webkit2_41"
+          
+          # macOS build (ARM64 - M1/M2/M3)
+          - platform: darwin/arm64
+            os: macos-latest
+            build-name: darwin-arm64
+            build-flags: ""
+          
+          # macOS build (Intel)
+          - platform: darwin/amd64
+            os: macos-latest
+            build-name: darwin-amd64
+            build-flags: ""
+          
+          # Windows build
+          - platform: windows/amd64
+            os: windows-latest
+            build-name: windows
+            build-flags: ""
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # Linux dependencies
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev build-essential
+
+      # macOS dependencies (none needed - Wails uses native WebKit)
+      
+      # Windows dependencies (none needed - Wails uses WebView2)
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Build application
+        run: |
+          wails build ${{ matrix.build-flags }} -platform ${{ matrix.platform }}
+
+      - name: Prepare artifacts (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p artifacts
+          cp build/bin/* artifacts/ || true
+          ls -la artifacts/
+
+      - name: Prepare artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -Path artifacts -ItemType Directory -Force
+          Copy-Item -Path build\bin\* -Destination artifacts\ -Recurse -Force
+          Get-ChildItem artifacts\
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlr-desktop-${{ matrix.build-name }}
+          path: artifacts/*
+          retention-days: 30
+
+  # Create release when a tag is pushed
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R release-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
