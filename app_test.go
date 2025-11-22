@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os/exec"
 	"strings"
 	"testing"
 )
@@ -47,14 +46,7 @@ func TestGetCommand(t *testing.T) {
 }
 
 func TestPreview(t *testing.T) {
-	// This test requires mlr to be installed.
-	// We can mock exec.Command or just skip if mlr is not found,
-	// but for now let's assume dev environment has mlr.
-	_, err := exec.LookPath("mlr")
-	if err != nil {
-		t.Skip("mlr not found in PATH")
-	}
-
+	// Test now uses the Miller library directly - no external binary needed
 	app := NewApp()
 	input := "a;b\n1;2\n3;4"
 	verbs := []VerbConfig{
@@ -71,7 +63,14 @@ func TestPreview(t *testing.T) {
 	if err != nil {
 		t.Errorf("Preview failed: %v", err)
 	}
-	if !strings.Contains(output, "{ \"a\": 1, \"b\": 2 }") && !strings.Contains(output, "\"a\": 1") { 
-		// Check for JSON output structure
+	
+	// Check for JSON output structure - should contain field "a" and "b"
+	if !strings.Contains(output, "\"a\"") || !strings.Contains(output, "\"b\"") {
+		t.Errorf("Expected JSON output with fields 'a' and 'b', got: %s", output)
+	}
+	
+	// Should contain values 1, 2, 3, 4
+	if !strings.Contains(output, "1") || !strings.Contains(output, "2") {
+		t.Errorf("Expected output to contain values from input, got: %s", output)
 	}
 }

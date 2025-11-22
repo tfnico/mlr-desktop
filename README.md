@@ -29,13 +29,12 @@ Before building or running this application, you need:
 1. **Go** (1.19 or later) - [Install Go](https://golang.org/doc/install)
 2. **Node.js** (14 or later) - [Install Node.js](https://nodejs.org/)
 3. **Wails CLI** - Install with: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
-4. **Miller (mlr)** - The application requires `mlr` to be installed and in your PATH
-   - Ubuntu/Debian: `sudo apt install miller`
-   - macOS: `brew install miller`
-   - Other: See [Miller installation instructions](https://miller.readthedocs.io/en/latest/installing/)
-5. **Linux Development Dependencies**:
+4. **Linux Development Dependencies**:
    - WebKit2GTK: `sudo apt install libwebkit2gtk-4.1-dev` (Ubuntu 22.04+) or `libwebkit2gtk-4.0-dev` (older versions)
    - Build tools: `sudo apt install build-essential`
+
+> [!NOTE]
+> The Miller data transformation library is embedded directly in the application - no external `mlr` binary installation is required!
 
 ## Building
 
