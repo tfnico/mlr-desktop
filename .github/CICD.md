@@ -69,9 +69,11 @@ The workflow will:
 Build artifacts are stored for 30 days and include:
 
 - `mlr-desktop-linux` - Linux executable
-- `mlr-desktop-darwin-amd64` - macOS Intel executable  
-- `mlr-desktop-darwin-arm64` - macOS ARM executable
+- `mlr-desktop-darwin-amd64.zip` - macOS Intel .app bundle (zipped)
+- `mlr-desktop-darwin-arm64.zip` - macOS ARM .app bundle (zipped)
 - `mlr-desktop-windows` - Windows executable (.exe)
+
+**Note**: macOS builds are packaged as .zip files containing the `.app` bundle, which is the standard macOS application format. Users should extract the .zip and drag the .app to their Applications folder.
 
 ## Binary Sizes
 

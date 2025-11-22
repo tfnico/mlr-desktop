@@ -120,11 +120,12 @@ Builds are automatically triggered on:
 
 1. Go to the [Releases](../../releases) page
 2. Download the appropriate binary for your platform:
-   - `mlr-desktop-linux` - Linux x86_64
-   - `mlr-desktop-darwin-amd64` - macOS Intel
-   - `mlr-desktop-darwin-arm64` - macOS Apple Silicon (M1/M2/M3)
-   - `mlr-desktop-windows` - Windows x86_64
-3. Extract and run the executable
+   - `mlr-desktop-linux` - Linux x86_64 executable
+   - `mlr-desktop-darwin-amd64.zip` - macOS Intel (extract and run the .app)
+   - `mlr-desktop-darwin-arm64.zip` - macOS Apple Silicon (extract and run the .app)
+   - `mlr-desktop-windows` - Windows x86_64 executable
+3. **For macOS**: Extract the .zip file and drag the .app to your Applications folder
+4. **For Linux/Windows**: Make executable (Linux: `chmod +x mlr-desktop`) and run
 
 ### Creating a Release
 

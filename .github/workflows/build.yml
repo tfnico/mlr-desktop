@@ -80,11 +80,21 @@ jobs:
         run: |
           wails build ${{ matrix.build-flags }} -platform ${{ matrix.platform }}
 
-      - name: Prepare artifacts (Linux/macOS)
-        if: matrix.os != 'windows-latest'
+      - name: Prepare artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           mkdir -p artifacts
-          cp build/bin/* artifacts/ || true
+          cp build/bin/mlr-desktop artifacts/ || true
+          ls -la artifacts/
+
+      - name: Prepare artifacts (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p artifacts
+          cd build/bin
+          # Create a zip file of the .app bundle for distribution
+          zip -r ../../artifacts/mlr-desktop-${{ matrix.build-name }}.zip mlr-desktop.app
+          cd ../..
           ls -la artifacts/
 
       - name: Prepare artifacts (Windows)
