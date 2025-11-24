@@ -112,6 +112,190 @@ type Config struct {
 	Options        string       `json:"options"`
 }
 
+// quoteIfNeeded adds quotes around a token if it contains spaces or quotes
+func quoteIfNeeded(token string) string {
+	// Only quote if the token contains:
+	// - spaces (which would split the token)
+	// - quotes (which need escaping)
+	// - backslashes (which need escaping)
+	if strings.Contains(token, " ") || strings.Contains(token, "\"") || strings.Contains(token, "\\") {
+		// Use double quotes and escape any internal double quotes and backslashes
+		escaped := strings.ReplaceAll(token, "\\", "\\\\")
+		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+		return "\"" + escaped + "\""
+	}
+	// Everything else (including $, =, parentheses, etc.) can remain unquoted
+	// because shellwords.Parse already handled them correctly
+	return token
+}
+
+// joinVerbTokens joins verb tokens with proper quoting
+func joinVerbTokens(tokens []string) string {
+	quoted := make([]string, len(tokens))
+	for i, token := range tokens {
+		quoted[i] = quoteIfNeeded(token)
+	}
+	return strings.Join(quoted, " ")
+}
+
+// ParseCommand parses an mlr command string and returns a Config
+// Expected format: mlr [--flags] {verb} [-options ...] [then {verb} ...] {filenames}
+func (a *App) ParseCommand(command string) (Config, error) {
+	defer RecoverFromPanic("ParseCommand")
+	
+	LogInfo("Parsing command", logrus.Fields{"command": command})
+	
+	var config Config
+	config.InputMode = "text"
+	config.FieldSeparator = ","
+	
+	// Parse the command string into tokens
+	tokens, err := shellwords.Parse(command)
+	if err != nil {
+		LogError(err, "Failed to parse command string", logrus.Fields{"command": command})
+		return config, fmt.Errorf("error parsing command: %v", err)
+	}
+	
+	if len(tokens) == 0 {
+		return config, fmt.Errorf("empty command")
+	}
+	
+	// Skip "mlr" if it's the first token
+	if tokens[0] == "mlr" {
+		tokens = tokens[1:]
+	}
+	
+	if len(tokens) == 0 {
+		return config, fmt.Errorf("empty command after removing 'mlr'")
+	}
+	
+	var allFlags []string
+	var verbs []VerbConfig
+	var currentVerb []string
+	
+	i := 0
+	
+	// Phase 1: Collect all leading flags that start with --
+	for i < len(tokens) && strings.HasPrefix(tokens[i], "--") {
+		allFlags = append(allFlags, tokens[i])
+		i++
+	}
+	
+	// Phase 2: Collect verbs (everything until we hit a filename)
+	// Verbs are separated by "then"
+	for i < len(tokens) {
+		token := tokens[i]
+		
+		if token == "then" {
+			// Save current verb if any
+			if len(currentVerb) > 0 {
+				verbs = append(verbs, VerbConfig{
+					Value:   joinVerbTokens(currentVerb),
+					Enabled: true,
+				})
+				currentVerb = nil
+			}
+			i++
+		} else {
+			currentVerb = append(currentVerb, token)
+			i++
+		}
+	}
+	
+	// Phase 3: Check if the last verb ends with file path(s)
+	// File paths typically contain "/" and don't start with "$" (which would be a Miller variable)
+	if len(currentVerb) > 0 {
+		// Work backwards to find where filenames start
+		lastVerbTokenIdx := len(currentVerb) - 1
+		
+		// Check from the end backwards for file paths
+		for lastVerbTokenIdx >= 0 {
+			token := currentVerb[lastVerbTokenIdx]
+			// If it looks like a file path (contains / but isn't a variable)
+			if strings.Contains(token, "/") && !strings.HasPrefix(token, "$") {
+				// This and everything after could be file paths
+				lastVerbTokenIdx--
+			} else {
+				// This looks like a verb or option, stop
+				break
+			}
+		}
+		
+		// If we found file paths at the end
+		if lastVerbTokenIdx < len(currentVerb)-1 {
+			// Extract file paths
+			filePaths := currentVerb[lastVerbTokenIdx+1:]
+			// For now, just use the first file path
+			if len(filePaths) > 0 {
+				config.InputPath = filePaths[0]
+				config.InputMode = "file"
+			}
+			
+			// Keep the verb part (if any)
+			if lastVerbTokenIdx >= 0 {
+				currentVerb = currentVerb[:lastVerbTokenIdx+1]
+			} else {
+				currentVerb = nil
+			}
+		}
+		
+		// Add the verb if there's still content
+		if len(currentVerb) > 0 {
+			verbs = append(verbs, VerbConfig{
+				Value:   joinVerbTokens(currentVerb),
+				Enabled: true,
+			})
+		}
+	}
+	
+	config.Verbs = verbs
+	
+	// Phase 4: Extract UI-specific flags from allFlags
+	// Only extract the few flags that map to UI fields
+	var otherFlags []string
+	
+	for _, flag := range allFlags {
+		// Input format flags
+		if flag == "--icsv" || flag == "--itsv" || flag == "--ijson" || flag == "--ijsonl" {
+			config.InputFormat = flag
+			continue
+		}
+		
+		// Output format flags
+		if flag == "--ocsv" || flag == "--otsv" || flag == "--ojson" || flag == "--ojsonl" || 
+		   flag == "--opprint" || flag == "--omd" || flag == "--oxtab" {
+			config.OutputFormat = flag
+			continue
+		}
+		
+		// CSV-specific UI flags
+		if flag == "--ragged" || flag == "--allow-ragged-csv-input" {
+			config.Ragged = true
+			continue
+		}
+		if flag == "--headerless-csv-input" {
+			config.Headerless = true
+			continue
+		}
+		
+		// Everything else goes to additional flags
+		otherFlags = append(otherFlags, flag)
+	}
+	
+	config.Options = strings.Join(otherFlags, " ")
+	
+	LogInfo("Command parsed successfully", logrus.Fields{
+		"input_format":  config.InputFormat,
+		"output_format": config.OutputFormat,
+		"verbs_count":   len(config.Verbs),
+		"options":       config.Options,
+		"input_path":    config.InputPath,
+		"input_mode":    config.InputMode,
+	})
+	
+	return config, nil
+}
+
 // getLastStatePath returns the path to the last state file
 func getLastStatePath() string {
 	home, err := os.UserHomeDir()

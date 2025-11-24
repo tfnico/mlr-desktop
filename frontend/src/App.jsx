@@ -5,7 +5,7 @@ import VerbBuilder from './components/VerbBuilder';
 import OutputPreview from './components/OutputPreview';
 import ErrorBoundary from './components/ErrorBoundary';
 import logger from './utils/logger';
-import { Preview, SaveConfig, LoadConfig, ExportGoProgram, ReadFileHead, SaveLastState, LoadLastState, GetCommand, SaveOutput } from '../wailsjs/go/main/App';
+import { Preview, SaveConfig, LoadConfig, ExportGoProgram, ReadFileHead, SaveLastState, LoadLastState, GetCommand, SaveOutput, ParseCommand } from '../wailsjs/go/main/App';
 
 const DEFAULT_INPUT_CONTENT = `SKU,Product Name,Price,Barcode
 FRO-010,Organic Free-Range Eggs (Dozen),5.99,5012345678901
@@ -118,11 +118,60 @@ function App() {
         }
     };
 
+    const handleImportCommand = async () => {
+        const commandStr = prompt("Paste your mlr command:");
+        if (!commandStr) return;
+
+        try {
+            const config = await ParseCommand(commandStr);
+
+            // Update all state from the parsed config
+            setInputFormat(config.inputFormat || '');
+            setOutputFormat(config.outputFormat || '');
+            setOptions(config.options || '');
+            setRagged(config.ragged || false);
+            setHeaderless(config.headerless || false);
+            setFieldSeparator(config.fieldSeparator || ',');
+            setVerbs(config.verbs || []);
+
+            // Update input mode and path if present
+            if (config.inputPath) {
+                setInputMode('file');
+                setInputValue(config.inputPath);
+            }
+
+            logger.info("Command imported successfully", {
+                verbs_count: config.verbs?.length,
+                input_mode: config.inputMode,
+                has_input_path: !!config.inputPath
+            });
+        } catch (err) {
+            logger.logError(err, { context: 'ImportCommand', command: commandStr });
+            alert("Error parsing command: " + err);
+        }
+    };
+
     return (
         <ErrorBoundary>
             <div id="app" className="App">
-                <header style={{ padding: '1rem', background: '#282c34', color: 'white', marginBottom: '1rem' }}>
+                <header style={{ padding: '1rem', background: '#282c34', color: 'white', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h1 style={{ margin: 0 }}>MLR Desktop Tool</h1>
+                    <button
+                        onClick={handleImportCommand}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#45a049'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#4CAF50'}
+                    >
+                        Import Command
+                    </button>
                 </header>
                 <main style={{ padding: '1rem', width: 'calc(100% - 2rem)', margin: '0 auto' }}>
                     <InputSection

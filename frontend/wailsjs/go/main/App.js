@@ -14,6 +14,10 @@ export function LoadLastState() {
   return window['go']['main']['App']['LoadLastState']();
 }
 
+export function ParseCommand(arg1) {
+  return window['go']['main']['App']['ParseCommand'](arg1);
+}
+
 export function Preview(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
   return window['go']['main']['App']['Preview'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
