@@ -52,7 +52,7 @@ func TestParseCommand(t *testing.T) {
 		},
 		{
 			name:           "Complex command with file path",
-			command:        "mlr --itsv --ragged --headerless-csv-input --opprint --implicit-csv-header head -n 50 then put \"$row_length = length($0)\" then label category /home/thomas/Downloads/strauss/import_de.txt",
+			command:        "mlr --itsv --ragged --headerless-csv-input --opprint --implicit-csv-header head -n 50 then put \"$row_length = length($0)\" then label category /home/thomas/Downloads/data.txt",
 			wantFormat:     "--itsv",
 			wantOutputFmt:  "--opprint",
 			wantVerbsCount: 3,

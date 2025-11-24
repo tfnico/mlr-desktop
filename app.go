@@ -112,21 +112,29 @@ type Config struct {
 	Options        string       `json:"options"`
 }
 
-// quoteIfNeeded adds quotes around a token if it contains spaces or quotes
+// quoteIfNeeded adds quotes around a token if it contains spaces or special characters
+// Prefers single quotes to avoid shell variable expansion of $field references
 func quoteIfNeeded(token string) string {
-	// Only quote if the token contains:
-	// - spaces (which would split the token)
-	// - quotes (which need escaping)
-	// - backslashes (which need escaping)
-	if strings.Contains(token, " ") || strings.Contains(token, "\"") || strings.Contains(token, "\\") {
-		// Use double quotes and escape any internal double quotes and backslashes
+	// Check if quoting is needed
+	needsQuoting := strings.Contains(token, " ") || 
+	                strings.Contains(token, "\"") || 
+	                strings.Contains(token, "\\") ||
+	                strings.Contains(token, "$")
+	
+	if !needsQuoting {
+		// No quoting needed
+		return token
+	}
+	
+	// If the token contains single quotes, we must use double quotes and escape
+	if strings.Contains(token, "'") {
 		escaped := strings.ReplaceAll(token, "\\", "\\\\")
 		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
 		return "\"" + escaped + "\""
 	}
-	// Everything else (including $, =, parentheses, etc.) can remain unquoted
-	// because shellwords.Parse already handled them correctly
-	return token
+	
+	// Otherwise, prefer single quotes to prevent shell variable expansion
+	return "'" + token + "'"
 }
 
 // joinVerbTokens joins verb tokens with proper quoting
@@ -431,25 +439,23 @@ func (a *App) GetCommand(verbs []VerbConfig, options string, inputFormat string,
 	}
 
 	// Quote arguments for display if they contain spaces or special characters
-	// Use single quotes when the arg contains double quotes (to avoid escaping)
-	// Use double quotes when the arg contains single quotes
-	// Use no quotes when the arg is simple
+	// Always prefer single quotes to avoid shell evaluation of $field references
+	// Only use double quotes if the argument contains single quotes
 	var displayArgs []string
 	for _, arg := range args {
-		needsQuoting := strings.Contains(arg, " ") || strings.Contains(arg, ";")
-		hasDoubleQuote := strings.Contains(arg, "\"")
+		needsQuoting := strings.Contains(arg, " ") || strings.Contains(arg, ";") || 
+		                strings.Contains(arg, "$") || strings.Contains(arg, "\"")
 		hasSingleQuote := strings.Contains(arg, "'")
 		
-		if needsQuoting || hasDoubleQuote || hasSingleQuote {
-			// If it has double quotes but no single quotes, use single quotes
-			if hasDoubleQuote && !hasSingleQuote {
-				displayArgs = append(displayArgs, "'"+arg+"'")
-			} else if hasSingleQuote && !hasDoubleQuote {
-				// If it has single quotes but no double quotes, use double quotes
-				displayArgs = append(displayArgs, "\""+arg+"\"")
+		if needsQuoting {
+			if hasSingleQuote {
+				// If it contains single quotes, we need to use double quotes and escape internal quotes
+				escaped := strings.ReplaceAll(arg, "\\", "\\\\")
+				escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+				displayArgs = append(displayArgs, "\""+escaped+"\"")
 			} else {
-				// If it has both or neither, use Go's %q (which escapes as needed)
-				displayArgs = append(displayArgs, fmt.Sprintf("%q", arg))
+				// Prefer single quotes to prevent shell variable expansion
+				displayArgs = append(displayArgs, "'"+arg+"'")
 			}
 		} else {
 			displayArgs = append(displayArgs, arg)
