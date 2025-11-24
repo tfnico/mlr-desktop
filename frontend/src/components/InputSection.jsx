@@ -1,5 +1,7 @@
 
 import React, { useState } from 'react';
+import { SelectInputFile } from '../../wailsjs/go/main/App';
+
 
 export default function InputSection({ onInputChange, onModeChange, mode, inputValue, options, inputFormat, ragged, headerless, fieldSeparator }) {
     // We use props for state now, but we can keep local state for immediate feedback if needed.
@@ -11,6 +13,17 @@ export default function InputSection({ onInputChange, onModeChange, mode, inputV
 
     const handleFileChange = (e) => {
         onInputChange(e.target.value, 'file', null, null, null, null, null);
+    };
+
+    const handleBrowseFile = async () => {
+        try {
+            const path = await SelectInputFile();
+            if (path) {
+                onInputChange(path, 'file', null, null, null, null, null);
+            }
+        } catch (err) {
+            console.error('Error selecting file:', err);
+        }
     };
 
     const showCsvOptions = inputFormat === '--icsv' || inputFormat === '--itsv';
@@ -90,13 +103,21 @@ export default function InputSection({ onInputChange, onModeChange, mode, inputV
                     style={{ width: '100%', height: '150px', fontFamily: 'monospace', resize: 'vertical', whiteSpace: 'pre', overflowX: 'auto' }}
                 />
             ) : (
-                <input
-                    type="text"
-                    value={inputValue}
-                    onChange={handleFileChange}
-                    placeholder="/absolute/path/to/file.csv"
-                    style={{ width: '100%', padding: '0.5rem' }}
-                />
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input
+                        type="text"
+                        value={inputValue}
+                        onChange={handleFileChange}
+                        placeholder="/absolute/path/to/file.csv"
+                        style={{ flex: 1, padding: '0.5rem' }}
+                    />
+                    <button
+                        onClick={handleBrowseFile}
+                        style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+                    >
+                        Browse...
+                    </button>
+                </div>
             )}
             <div style={{ marginTop: '0.5rem' }}>
                 <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.25rem', color: '#666' }}>Additional flags</label>
