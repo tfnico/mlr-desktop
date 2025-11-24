@@ -156,7 +156,7 @@ export default function VerbBuilder({ verbs, setVerbs }) {
                 <button onClick={addVerb}>Add Verb</button>
             </div>
             <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>Quick Add:</h4>
+                <h4 style={{ marginBottom: '0.5rem' }}>Quick Add</h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {[
                         { label: 'Head 5', value: 'head -n 5' },

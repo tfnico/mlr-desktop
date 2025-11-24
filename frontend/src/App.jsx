@@ -32,6 +32,7 @@ function App() {
     const [output, setOutput] = useState('');
     const [error, setError] = useState('');
     const [command, setCommand] = useState('');
+    const [filePreview, setFilePreview] = useState('');
 
     // Load last state on startup
     useEffect(() => {
@@ -56,6 +57,24 @@ function App() {
         };
         loadState();
     }, []);
+
+    // Load file preview when in file mode
+    useEffect(() => {
+        if (inputMode === 'file' && inputValue && inputValue.trim()) {
+            const loadFilePreview = async () => {
+                try {
+                    const preview = await ReadFileHead(inputValue, 20);
+                    setFilePreview(preview);
+                } catch (err) {
+                    logger.error("Error loading file preview", { path: inputValue, error: err });
+                    setFilePreview('');
+                }
+            };
+            loadFilePreview();
+        } else {
+            setFilePreview('');
+        }
+    }, [inputMode, inputValue]);
 
     const updatePreview = useCallback(async () => {
         setError('');
@@ -211,21 +230,22 @@ function App() {
                     <InputSection
                         mode={inputMode}
                         inputValue={inputValue}
+                        filePreview={filePreview}
                         options={options}
                         inputFormat={inputFormat}
                         ragged={ragged}
                         headerless={headerless}
                         fieldSeparator={fieldSeparator}
-                        onInputChange={(val, mode, opts, fmt, rag, hdl, fs) => {
+                        onInputChange={(val, mode, opts, format, rag, head, sep) => {
                             if (val !== null) setInputValue(val);
                             if (mode !== null) setInputMode(mode);
                             if (opts !== null) setOptions(opts);
-                            if (fmt !== null) setInputFormat(fmt);
+                            if (format !== null) setInputFormat(format);
                             if (rag !== null) setRagged(rag);
-                            if (hdl !== null) setHeaderless(hdl);
-                            if (fs !== null) setFieldSeparator(fs);
+                            if (head !== null) setHeaderless(head);
+                            if (sep !== null) setFieldSeparator(sep);
                         }}
-                        onModeChange={(mode) => setInputMode(mode)}
+                        onModeChange={setInputMode}
                     />
                     <VerbBuilder verbs={verbs} setVerbs={setVerbs} />
                     <OutputPreview

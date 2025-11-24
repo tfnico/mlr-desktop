@@ -35,7 +35,16 @@ export default function OutputPreview({ output, error, outputFormat, onOutputFor
                 <textarea
                     readOnly
                     value={output}
-                    style={{ width: '100%', height: '300px', fontFamily: 'monospace', resize: 'vertical', whiteSpace: 'pre', overflowX: 'auto' }}
+                    style={{
+                        width: '100%',
+                        height: '300px',
+                        fontFamily: 'monospace',
+                        resize: 'vertical',
+                        whiteSpace: 'pre',
+                        overflowX: 'auto',
+                        backgroundColor: '#f5f5f5',
+                        border: '1px solid #ddd'
+                    }}
                 />
             )}
             {command && (
@@ -50,9 +59,9 @@ export default function OutputPreview({ output, error, outputFormat, onOutputFor
                             height: '80px',
                             fontFamily: 'monospace',
                             padding: '0.5rem',
-                            border: '1px solid #ccc',
+                            border: '1px solid #ddd',
                             borderRadius: '4px',
-                            backgroundColor: '#fff',
+                            backgroundColor: '#f5f5f5',
                             color: '#333',
                             resize: 'vertical'
                         }}

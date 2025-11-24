@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { SelectInputFile } from '../../wailsjs/go/main/App';
 
 
-export default function InputSection({ onInputChange, onModeChange, mode, inputValue, options, inputFormat, ragged, headerless, fieldSeparator }) {
+export default function InputSection({ onInputChange, onModeChange, mode, inputValue, filePreview, options, inputFormat, ragged, headerless, fieldSeparator }) {
     // We use props for state now, but we can keep local state for immediate feedback if needed.
     // However, for controlled components, we should rely on props.
 
@@ -103,24 +103,47 @@ export default function InputSection({ onInputChange, onModeChange, mode, inputV
                     style={{ width: '100%', height: '150px', fontFamily: 'monospace', resize: 'vertical', whiteSpace: 'pre', overflowX: 'auto' }}
                 />
             ) : (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <input
-                        type="text"
-                        value={inputValue}
-                        onChange={handleFileChange}
-                        placeholder="/absolute/path/to/file.csv"
-                        style={{ flex: 1, padding: '0.5rem' }}
-                    />
-                    <button
-                        onClick={handleBrowseFile}
-                        style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-                    >
-                        Browse...
-                    </button>
-                </div>
+                <>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={handleFileChange}
+                            placeholder="/absolute/path/to/file.csv"
+                            style={{ flex: 1, padding: '0.5rem' }}
+                        />
+                        <button
+                            onClick={handleBrowseFile}
+                            style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+                        >
+                            Browse...
+                        </button>
+                    </div>
+                    {filePreview && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.25rem', color: '#ccc' }}>
+                                File Preview (first 20 lines):
+                            </label>
+                            <textarea
+                                value={filePreview}
+                                readOnly
+                                style={{
+                                    width: '100%',
+                                    height: '150px',
+                                    fontFamily: 'monospace',
+                                    resize: 'vertical',
+                                    whiteSpace: 'pre',
+                                    overflowX: 'auto',
+                                    backgroundColor: '#f5f5f5',
+                                    border: '1px solid #ddd'
+                                }}
+                            />
+                        </div>
+                    )}
+                </>
             )}
             <div style={{ marginTop: '0.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.25rem', color: '#666' }}>Additional flags</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.25rem', color: '#ccc' }}>Additional flags</label>
                 <input
                     type="text"
                     value={options}
