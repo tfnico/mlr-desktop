@@ -151,27 +151,61 @@ function App() {
         }
     };
 
+    const handleClear = () => {
+        setInputMode('text');
+        setInputValue(DEFAULT_INPUT_CONTENT);
+        setOptions('');
+        setInputFormat('');
+        setRagged(false);
+        setHeaderless(false);
+        setFieldSeparator(',');
+        setOutputFormat('');
+        setVerbs([]);
+        setOutput('');
+        setError('');
+        setCommand('');
+        logger.info("Application state cleared");
+    };
+
     return (
         <ErrorBoundary>
             <div id="app" className="App">
                 <header style={{ padding: '1rem', background: '#282c34', color: 'white', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h1 style={{ margin: 0 }}>MLR Desktop Tool</h1>
-                    <button
-                        onClick={handleImportCommand}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            backgroundColor: '#4CAF50',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                        }}
-                        onMouseOver={(e) => e.target.style.backgroundColor = '#45a049'}
-                        onMouseOut={(e) => e.target.style.backgroundColor = '#4CAF50'}
-                    >
-                        Import Command
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            onClick={handleImportCommand}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold'
+                            }}
+                            onMouseOver={(e) => e.target.style.backgroundColor = '#45a049'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#4CAF50'}
+                        >
+                            Import Command
+                        </button>
+                        <button
+                            onClick={handleClear}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold'
+                            }}
+                            onMouseOver={(e) => e.target.style.backgroundColor = '#da190b'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#f44336'}
+                        >
+                            Clear
+                        </button>
+                    </div>
                 </header>
                 <main style={{ padding: '1rem', width: 'calc(100% - 2rem)', margin: '0 auto' }}>
                     <InputSection
