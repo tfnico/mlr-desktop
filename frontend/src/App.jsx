@@ -65,7 +65,9 @@ function App() {
             return;
         }
 
-        if (verbs.length === 0) {
+        // Check if there are any enabled verbs
+        const hasEnabledVerbs = verbs.some(verb => verb.enabled);
+        if (!hasEnabledVerbs) {
             setOutput('');
             setCommand('');
             return;
