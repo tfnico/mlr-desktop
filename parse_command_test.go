@@ -59,6 +59,15 @@ func TestParseCommand(t *testing.T) {
 			wantOptions:    "--implicit-csv-header",
 			wantError:      false,
 		},
+		{
+			name:           "Command with flag taking argument",
+			command:        `mlr --opprint --inidx --ifs tab --repifs filter '$1 == "PRS" && $2 == 1'`,
+			wantFormat:     "",
+			wantOutputFmt:  "--opprint",
+			wantVerbsCount: 1,
+			wantOptions:    "--inidx --ifs tab --repifs",
+			wantError:      false,
+		},
 	}
 	
 	for _, tt := range tests {

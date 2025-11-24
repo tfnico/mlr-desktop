@@ -146,6 +146,100 @@ func joinVerbTokens(tokens []string) string {
 	return strings.Join(quoted, " ")
 }
 
+// millerVerbs is the complete list of Miller verbs as of Miller v6
+var millerVerbs = map[string]bool{
+	"altkv":                   true,
+	"bar":                     true,
+	"bootstrap":               true,
+	"case":                    true,
+	"cat":                     true,
+	"check":                   true,
+	"clean-whitespace":        true,
+	"count-distinct":          true,
+	"count":                   true,
+	"count-similar":           true,
+	"cut":                     true,
+	"decimate":                true,
+	"fill-down":               true,
+	"fill-empty":              true,
+	"filter":                  true,
+	"flatten":                 true,
+	"format-values":           true,
+	"fraction":                true,
+	"gap":                     true,
+	"grep":                    true,
+	"group-by":                true,
+	"group-like":              true,
+	"gsub":                    true,
+	"having-fields":           true,
+	"head":                    true,
+	"histogram":               true,
+	"json-parse":              true,
+	"json-stringify":          true,
+	"join":                    true,
+	"label":                   true,
+	"latin1-to-utf8":          true,
+	"least-frequent":          true,
+	"merge-fields":            true,
+	"most-frequent":           true,
+	"nest":                    true,
+	"nothing":                 true,
+	"put":                     true,
+	"regularize":              true,
+	"remove-empty-columns":    true,
+	"rename":                  true,
+	"reorder":                 true,
+	"repeat":                  true,
+	"reshape":                 true,
+	"sample":                  true,
+	"sec2gmtdate":             true,
+	"sec2gmt":                 true,
+	"seqgen":                  true,
+	"shuffle":                 true,
+	"skip-trivial-records":    true,
+	"sort":                    true,
+	"sort-within-records":     true,
+	"split":                   true,
+	"ssub":                    true,
+	"stats1":                  true,
+	"stats2":                  true,
+	"step":                    true,
+	"sub":                     true,
+	"summary":                 true,
+	"tac":                     true,
+	"tail":                    true,
+	"tee":                     true,
+	"template":                true,
+	"top":                     true,
+	"utf8-to-latin1":          true,
+	"unflatten":               true,
+	"uniq":                    true,
+	"unspace":                 true,
+	"unsparsify":              true,
+}
+
+// flagsTakingArguments lists flags that require an argument
+var flagsTakingArguments = map[string]bool{
+	"--ifs":              true,
+	"--ofs":              true,
+	"--irs":              true,
+	"--ors":              true,
+	"--ips":              true,
+	"--ops":              true,
+	"--jvstack":          true,
+	"--nr-progress-mod":  true,
+	"--ofmt":             true,
+	"--load":             true,
+	"--mload":            true,
+	"--seed":             true,
+}
+
+// isMillerVerb checks if a token is a known Miller verb
+func isMillerVerb(token string) bool {
+	return millerVerbs[token]
+}
+
+
 // ParseCommand parses an mlr command string and returns a Config
 // Expected format: mlr [--flags] {verb} [-options ...] [then {verb} ...] {filenames}
 func (a *App) ParseCommand(command string) (Config, error) {
@@ -184,13 +278,22 @@ func (a *App) ParseCommand(command string) (Config, error) {
 	i := 0
 	
 	// Phase 1: Collect all leading flags that start with --
+	// Handle flags that take arguments (e.g., --ifs tab)
 	for i < len(tokens) && strings.HasPrefix(tokens[i], "--") {
-		allFlags = append(allFlags, tokens[i])
+		flag := tokens[i]
+		allFlags = append(allFlags, flag)
 		i++
+		
+		// If this flag takes an argument, consume the next token as its argument
+		if flagsTakingArguments[flag] && i < len(tokens) {
+			// The next token is the flag's argument, not a verb
+			allFlags = append(allFlags, tokens[i])
+			i++
+		}
 	}
 	
 	// Phase 2: Collect verbs (everything until we hit a filename)
-	// Verbs are separated by "then"
+	// Verbs are separated by "then" and must be known Miller verbs
 	for i < len(tokens) {
 		token := tokens[i]
 		
@@ -204,9 +307,18 @@ func (a *App) ParseCommand(command string) (Config, error) {
 				currentVerb = nil
 			}
 			i++
-		} else {
+		} else if len(currentVerb) == 0 && isMillerVerb(token) {
+			// This is the start of a new verb
 			currentVerb = append(currentVerb, token)
 			i++
+		} else if len(currentVerb) > 0 {
+			// We're already in a verb, add this token to it
+			currentVerb = append(currentVerb, token)
+			i++
+		} else {
+			// Not a verb and not in a verb - might be a filename or unknown token
+			// Treat as potential filename
+			break
 		}
 	}
 	
