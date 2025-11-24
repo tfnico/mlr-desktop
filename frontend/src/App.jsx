@@ -3,6 +3,8 @@ import './App.css';
 import InputSection from './components/InputSection';
 import VerbBuilder from './components/VerbBuilder';
 import OutputPreview from './components/OutputPreview';
+import ErrorBoundary from './components/ErrorBoundary';
+import logger from './utils/logger';
 import { Preview, SaveConfig, LoadConfig, ExportGoProgram, ReadFileHead, SaveLastState, LoadLastState, GetCommand, SaveOutput } from '../wailsjs/go/main/App';
 
 const DEFAULT_INPUT_CONTENT = `SKU,Product Name,Price,Barcode
@@ -48,6 +50,7 @@ function App() {
                     setOutputFormat(config.outputFormat || '');
                 }
             } catch (err) {
+                logger.logError(err, { context: 'LoadLastState' });
                 console.log("No previous state found or error loading:", err);
             }
         };
@@ -76,7 +79,9 @@ function App() {
                 if (!inputValue.trim()) return;
                 inputContent = await ReadFileHead(inputValue, 100);
             } catch (err) {
-                setError(`Error reading file: ${err}`);
+                const errorMsg = `Error reading file: ${err}`;
+                logger.error(errorMsg, { context: 'ReadFileHead', path: inputValue });
+                setError(errorMsg);
                 return;
             }
         }
@@ -89,6 +94,7 @@ function App() {
             // Auto-save state on success
             SaveLastState({ inputPath: inputValue, inputMode, inputFormat, ragged, headerless, fieldSeparator, outputFormat, verbs, options });
         } catch (err) {
+            logger.logError(err, { context: 'Preview', verbs, inputFormat, outputFormat });
             setError(String(err));
         }
     }, [inputValue, inputMode, verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat]);
@@ -105,46 +111,49 @@ function App() {
         try {
             await SaveOutput(output);
         } catch (err) {
+            logger.logError(err, { context: 'SaveOutput' });
             alert("Error saving output: " + err);
         }
     };
 
     return (
-        <div id="app" className="App">
-            <header style={{ padding: '1rem', background: '#282c34', color: 'white', marginBottom: '1rem' }}>
-                <h1 style={{ margin: 0 }}>MLR Desktop Tool</h1>
-            </header>
-            <main style={{ padding: '1rem', width: 'calc(100% - 2rem)', margin: '0 auto' }}>
-                <InputSection
-                    mode={inputMode}
-                    inputValue={inputValue}
-                    options={options}
-                    inputFormat={inputFormat}
-                    ragged={ragged}
-                    headerless={headerless}
-                    fieldSeparator={fieldSeparator}
-                    onInputChange={(val, mode, opts, fmt, rag, hdl, fs) => {
-                        if (val !== null) setInputValue(val);
-                        if (mode !== null) setInputMode(mode);
-                        if (opts !== null) setOptions(opts);
-                        if (fmt !== null) setInputFormat(fmt);
-                        if (rag !== null) setRagged(rag);
-                        if (hdl !== null) setHeaderless(hdl);
-                        if (fs !== null) setFieldSeparator(fs);
-                    }}
-                    onModeChange={(mode) => setInputMode(mode)}
-                />
-                <VerbBuilder verbs={verbs} setVerbs={setVerbs} />
-                <OutputPreview
-                    output={output}
-                    error={error}
-                    outputFormat={outputFormat}
-                    onOutputFormatChange={setOutputFormat}
-                    command={command}
-                    onSave={handleSaveOutput}
-                />
-            </main>
-        </div>
+        <ErrorBoundary>
+            <div id="app" className="App">
+                <header style={{ padding: '1rem', background: '#282c34', color: 'white', marginBottom: '1rem' }}>
+                    <h1 style={{ margin: 0 }}>MLR Desktop Tool</h1>
+                </header>
+                <main style={{ padding: '1rem', width: 'calc(100% - 2rem)', margin: '0 auto' }}>
+                    <InputSection
+                        mode={inputMode}
+                        inputValue={inputValue}
+                        options={options}
+                        inputFormat={inputFormat}
+                        ragged={ragged}
+                        headerless={headerless}
+                        fieldSeparator={fieldSeparator}
+                        onInputChange={(val, mode, opts, fmt, rag, hdl, fs) => {
+                            if (val !== null) setInputValue(val);
+                            if (mode !== null) setInputMode(mode);
+                            if (opts !== null) setOptions(opts);
+                            if (fmt !== null) setInputFormat(fmt);
+                            if (rag !== null) setRagged(rag);
+                            if (hdl !== null) setHeaderless(hdl);
+                            if (fs !== null) setFieldSeparator(fs);
+                        }}
+                        onModeChange={(mode) => setInputMode(mode)}
+                    />
+                    <VerbBuilder verbs={verbs} setVerbs={setVerbs} />
+                    <OutputPreview
+                        output={output}
+                        error={error}
+                        outputFormat={outputFormat}
+                        onOutputFormatChange={setOutputFormat}
+                        command={command}
+                        onSave={handleSaveOutput}
+                    />
+                </main>
+            </div>
+        </ErrorBoundary>
     );
 }
 

@@ -159,3 +159,48 @@ This project uses the following tools and frameworks:
 - [Miller (mlr)](https://github.com/johnkerl/miller) - BSD 2-Clause License
 
 Please see their respective licenses for details.
+
+## Troubleshooting
+
+### Application Logs
+
+The application automatically logs all operations, errors, and crashes to help with debugging. Log files are stored in:
+
+```
+~/.mlr-desktop/logs/app.log
+```
+
+Older logs are automatically rotated and compressed:
+- `app.log` - Current log file
+- `app.log.1`, `app.log.2`, etc. - Previous log files
+- Logs are kept for 30 days
+- Maximum 5 backup files are retained
+- Each file is limited to 10MB
+
+### Enabling Debug Logging
+
+To enable more verbose logging for troubleshooting:
+
+1. Edit `logger.go` and change the log level:
+   ```go
+   Log.SetLevel(logrus.DebugLevel)  // Change from InfoLevel to DebugLevel
+   ```
+2. Rebuild the application
+
+### Common Issues
+
+**Application crashes or shows errors:**
+1. Check the log files in `~/.mlr-desktop/logs/app.log`
+2. Look for ERROR or FATAL level messages
+3. The stack trace will show where the crash occurred
+
+**Frontend errors:**
+- Browser console errors are automatically logged
+- Check the developer console (F12) for additional details
+- If you see an error boundary message, check `~/.mlr-desktop/logs/` for backend issues
+
+**Reporting Issues:**
+When reporting bugs, please include:
+- The contents of `~/.mlr-desktop/logs/app.log`
+- Steps to reproduce the issue
+- Your operating system and version

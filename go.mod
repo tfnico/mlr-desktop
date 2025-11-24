@@ -5,7 +5,9 @@ go 1.24.5
 require (
 	github.com/johnkerl/miller/v6 v6.15.0
 	github.com/mattn/go-shellwords v1.0.12
+	github.com/sirupsen/logrus v1.9.3
 	github.com/wailsapp/wails/v2 v2.10.1
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
