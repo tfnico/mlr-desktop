@@ -12,6 +12,8 @@ export function ParseCommand(arg1:string):Promise<main.Config>;
 
 export function Preview(arg1:string,arg2:Array<main.VerbConfig>,arg3:string,arg4:string,arg5:boolean,arg6:boolean,arg7:string,arg8:string):Promise<string>;
 
+export function PreviewFile(arg1:string,arg2:Array<main.VerbConfig>,arg3:string,arg4:string,arg5:boolean,arg6:boolean,arg7:string,arg8:string):Promise<string>;
+
 export function ReadFileHead(arg1:string,arg2:number):Promise<string>;
 
 export function SaveConfig(arg1:main.Config,arg2:string):Promise<void>;

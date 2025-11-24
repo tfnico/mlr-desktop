@@ -431,14 +431,26 @@ func (a *App) GetCommand(verbs []VerbConfig, options string, inputFormat string,
 	}
 
 	// Quote arguments for display if they contain spaces or special characters
-	// We can use shellwords.Join but it might not be perfect for display. 
-	// Let's do a simple quoting for now or just join with spaces if simple.
-	// shellwords doesn't have a Join.
-	// Let's iterate and quote if needed.
+	// Use single quotes when the arg contains double quotes (to avoid escaping)
+	// Use double quotes when the arg contains single quotes
+	// Use no quotes when the arg is simple
 	var displayArgs []string
 	for _, arg := range args {
-		if strings.Contains(arg, " ") || strings.Contains(arg, ";") || strings.Contains(arg, "\"") || strings.Contains(arg, "'") {
-			displayArgs = append(displayArgs, fmt.Sprintf("%q", arg))
+		needsQuoting := strings.Contains(arg, " ") || strings.Contains(arg, ";")
+		hasDoubleQuote := strings.Contains(arg, "\"")
+		hasSingleQuote := strings.Contains(arg, "'")
+		
+		if needsQuoting || hasDoubleQuote || hasSingleQuote {
+			// If it has double quotes but no single quotes, use single quotes
+			if hasDoubleQuote && !hasSingleQuote {
+				displayArgs = append(displayArgs, "'"+arg+"'")
+			} else if hasSingleQuote && !hasDoubleQuote {
+				// If it has single quotes but no double quotes, use double quotes
+				displayArgs = append(displayArgs, "\""+arg+"\"")
+			} else {
+				// If it has both or neither, use Go's %q (which escapes as needed)
+				displayArgs = append(displayArgs, fmt.Sprintf("%q", arg))
+			}
 		} else {
 			displayArgs = append(displayArgs, arg)
 		}
@@ -535,6 +547,62 @@ func (a *App) Preview(input string, verbs []VerbConfig, options string, inputFor
 	
 	return result, nil
 }
+
+// PreviewFile executes the mlr transformation on a file directly
+// This avoids reading the entire file into memory first
+func (a *App) PreviewFile(filePath string, verbs []VerbConfig, options string, inputFormat string, ragged bool, headerless bool, fieldSeparator string, outputFormat string) (string, error) {
+	defer RecoverFromPanic("PreviewFile")
+	
+	LogInfo("PreviewFile transformation started", logrus.Fields{
+		"file_path": filePath,
+		"input_format": inputFormat,
+		"output_format": outputFormat,
+		"verbs_count": len(verbs),
+	})
+	
+	// Build the command-line arguments as we would pass to mlr
+	args, err := a.constructArgs(verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat)
+	if err != nil {
+		LogError(err, "Failed to construct args", nil)
+		return "", err
+	}
+
+	// Miller's ParseCommandLine expects args[0] to be the program name (like os.Args)
+	// Prepend "mlr" to match the expected format
+	argsWithProgramName := append([]string{"mlr"}, args...)
+	
+	LogInfo("Calling ParseCommandLine", logrus.Fields{
+		"full_args": argsWithProgramName,
+	})
+
+	// Parse the command line to get options and transformers
+	mlrOptions, recordTransformers, err := climain.ParseCommandLine(argsWithProgramName)
+	if err != nil {
+		LogError(err, "Failed to parse command", logrus.Fields{"args": argsWithProgramName})
+		return "", fmt.Errorf("error parsing command: %v", err)
+	}
+
+	// Set up output buffer
+	var outputBuffer bytes.Buffer
+	bufferedOutputStream := bufio.NewWriter(&outputBuffer)
+
+	// Run the Miller transformation directly on the file
+	err = runMillerTransformation([]string{filePath}, mlrOptions, recordTransformers, bufferedOutputStream)
+	if err != nil {
+		LogError(err, "Miller transformation failed", logrus.Fields{"file": filePath})
+		return "", err
+	}
+
+	bufferedOutputStream.Flush()
+	result := outputBuffer.String()
+	
+	LogInfo("PreviewFile transformation completed", logrus.Fields{
+		"output_size": len(result),
+	})
+	
+	return result, nil
+}
+
 
 // runMillerTransformation runs the Miller transformation pipeline
 // This is based on Miller's streaming architecture from the library examples

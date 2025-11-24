@@ -5,7 +5,7 @@ import VerbBuilder from './components/VerbBuilder';
 import OutputPreview from './components/OutputPreview';
 import ErrorBoundary from './components/ErrorBoundary';
 import logger from './utils/logger';
-import { Preview, SaveConfig, LoadConfig, ExportGoProgram, ReadFileHead, SaveLastState, LoadLastState, GetCommand, SaveOutput, ParseCommand } from '../wailsjs/go/main/App';
+import { Preview, PreviewFile, SaveConfig, LoadConfig, ExportGoProgram, ReadFileHead, SaveLastState, LoadLastState, GetCommand, SaveOutput, ParseCommand } from '../wailsjs/go/main/App';
 
 const DEFAULT_INPUT_CONTENT = `SKU,Product Name,Price,Barcode
 FRO-010,Organic Free-Range Eggs (Dozen),5.99,5012345678901
@@ -92,30 +92,24 @@ function App() {
             return;
         }
 
-        let inputContent = inputValue;
-        if (inputMode === 'file') {
-            try {
-                // Read first 100 lines for preview
-                // Check if path is not empty
-                if (!inputValue.trim()) return;
-                inputContent = await ReadFileHead(inputValue, 100);
-            } catch (err) {
-                const errorMsg = `Error reading file: ${err}`;
-                logger.error(errorMsg, { context: 'ReadFileHead', path: inputValue });
-                setError(errorMsg);
-                return;
-            }
-        }
-
         try {
-            const result = await Preview(inputContent, verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat);
+            let result;
+            if (inputMode === 'file') {
+                // Process the file directly without reading into memory
+                if (!inputValue.trim()) return;
+                result = await PreviewFile(inputValue, verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat);
+            } else {
+                // Process text content
+                result = await Preview(inputValue, verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat);
+            }
+
             setOutput(result);
             const cmd = await GetCommand(verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat, inputMode, inputValue);
             setCommand(cmd);
             // Auto-save state on success
             SaveLastState({ inputPath: inputValue, inputMode, inputFormat, ragged, headerless, fieldSeparator, outputFormat, verbs, options });
         } catch (err) {
-            logger.logError(err, { context: 'Preview', verbs, inputFormat, outputFormat });
+            logger.logError(err, { context: inputMode === 'file' ? 'PreviewFile' : 'Preview', verbs, inputFormat, outputFormat });
             setError(String(err));
         }
     }, [inputValue, inputMode, verbs, options, inputFormat, ragged, headerless, fieldSeparator, outputFormat]);

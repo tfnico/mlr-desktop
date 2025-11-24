@@ -22,6 +22,10 @@ export function Preview(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
   return window['go']['main']['App']['Preview'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
+export function PreviewFile(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['main']['App']['PreviewFile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
 export function ReadFileHead(arg1, arg2) {
   return window['go']['main']['App']['ReadFileHead'](arg1, arg2);
 }
