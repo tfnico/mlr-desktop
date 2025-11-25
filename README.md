@@ -2,27 +2,64 @@
 
 A user-friendly desktop application for transforming data using the [Miller (mlr)](https://github.com/johnkerl/miller) command-line tool. This GUI application makes it easy to experiment with mlr transformations interactively.
 
+### Downloading Pre-built Binaries
+
+1. Go to the [Releases](../../releases) page
+2. Download the appropriate binary for your platform:
+   - `mlr-desktop` - Linux x86_64 executable
+   - `mlr-desktop-darwin-amd64.zip` - macOS Intel (extract and run the .app)
+   - `mlr-desktop-darwin-arm64.zip` - macOS Apple Silicon (extract and run the .app)
+   - `mlr-desktop-windows` - Windows x86_64 executable
+3. **For macOS**: Extract the .zip file and drag the .app to your Applications folder
+4. **For Linux/Windows**: Make executable (Linux: `chmod +x mlr-desktop`) and run
+
+On Windows, you may be warned by Microsoft Defender to not run this unrecognized app. Press "More info" and then "Run anyway".
+
+
 ## Features
+
+![Screenshot](assets/screenshot.png)
 
 - **Interactive Preview**: See real-time output as you build your transformation pipeline
 - **Sample Data**: Comes pre-loaded with sample grocery data to help you get started
+- **Import command**: Import an mlr command
 - **Multiple Input Formats**: Support for CSV, TSV, JSON, and NDJSON
   - CSV/TSV-specific options: Ragged, Headerless, Custom field separator
 - **Multiple Output Formats**: Pretty Print, CSV, TSV, JSON, NDJSON
-- **Verb Pipeline Builder**: Chain multiple mlr verbs with drag-and-drop reordering
+- **Verb Pipeline Builder**: Chain multiple mlr verbs, reorder them, enable/disable them
 - **Quick Add Shortcuts**: Common transformation patterns available with one click
-  - Head 5 lines
-  - Clean headers (replace spaces with underscores)
-  - Filter by column value
-  - Label columns
-  - Cut columns
-  - Add computed columns (split/extract)
-- **Command Preview**: See the exact mlr command that will be executed
+- **Generated command**: See the exact mlr command that will be executed
 - **Save Output**: Export transformed data to a file
 - **Auto-save**: Your work is automatically saved between sessions
 - **File Input**: Load data from files or paste it directly
 
-## Prerequisites
+
+## Usage
+
+1. **Input Data**: 
+   - Use the pre-loaded sample data, or
+   - Paste your own data in the text area, or
+   - Click "File Path" and select a file from your system
+
+2. **Configure Input Format**: 
+   - Select the input format (CSV, TSV, JSON, NDJSON) from the dropdown
+   - For CSV/TSV, enable optional flags like "Ragged" or "Headerless" if needed
+
+3. **Add Transformations**:
+   - Use the "Quick Add" shortcuts for common operations, or
+   - Type custom mlr verbs in the text field (e.g., `cut -f SKU,Price`)
+   - Reorder verbs by clicking the ▲/▼ buttons
+   - Enable/disable verbs with checkboxes
+
+4. **Configure Output Format**:
+   - Choose your desired output format from the dropdown
+
+5. **Preview & Save**:
+   - The output updates automatically as you make changes
+   - Click "Save to File" to export the transformed data
+   - Copy the generated command to use mlr directly in your terminal
+
+## Developing
 
 Before building or running this application, you need:
 
@@ -35,8 +72,6 @@ Before building or running this application, you need:
 
 > [!NOTE]
 > The Miller data transformation library is embedded directly in the application - no external `mlr` binary installation is required!
-
-## Building
 
 ### Development Build
 
@@ -68,41 +103,6 @@ After building, run the application:
 ./build/bin/mlr-desktop
 ```
 
-## Development
-
-To run in live development mode with hot reload:
-
-```bash
-wails dev -tags webkit2_41
-```
-
-This will start a development server with your Go backend and a Vite frontend server for fast iteration.
-
-## Usage
-
-1. **Input Data**: 
-   - Use the pre-loaded sample data, or
-   - Paste your own data in the text area, or
-   - Click "File Path" and select a file from your system
-
-2. **Configure Input Format**: 
-   - Select the input format (CSV, TSV, JSON, NDJSON) from the dropdown
-   - For CSV/TSV, enable optional flags like "Ragged" or "Headerless" if needed
-
-3. **Add Transformations**:
-   - Use the "Quick Add" shortcuts for common operations, or
-   - Type custom mlr verbs in the text field (e.g., `cut -f SKU,Price`)
-   - Reorder verbs by clicking the ▲/▼ buttons
-   - Enable/disable verbs with checkboxes
-
-4. **Configure Output Format**:
-   - Choose your desired output format from the dropdown
-
-5. **Preview & Save**:
-   - The output updates automatically as you make changes
-   - Click "Save to File" to export the transformed data
-   - Copy the generated command to use mlr directly in your terminal
-
 ## CI/CD and Downloads
 
 This project uses GitHub Actions to automatically build executables for multiple platforms:
@@ -116,37 +116,16 @@ Builds are automatically triggered on:
 - Pull requests
 - Version tags (e.g., `v1.0.0`)
 
-### Downloading Pre-built Binaries
-
-1. Go to the [Releases](../../releases) page
-2. Download the appropriate binary for your platform:
-   - `mlr-desktop-linux` - Linux x86_64 executable
-   - `mlr-desktop-darwin-amd64.zip` - macOS Intel (extract and run the .app)
-   - `mlr-desktop-darwin-arm64.zip` - macOS Apple Silicon (extract and run the .app)
-   - `mlr-desktop-windows` - Windows x86_64 executable
-3. **For macOS**: Extract the .zip file and drag the .app to your Applications folder
-4. **For Linux/Windows**: Make executable (Linux: `chmod +x mlr-desktop`) and run
-
 ### Creating a Release
 
 To create a new release with pre-built binaries:
 
 ```bash
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
+git tag -a v0.0.1 -m "Release version 0.0.1"
+git push origin v0.0.1
 ```
 
 The GitHub Actions workflow will automatically build for all platforms and create a GitHub release with the binaries attached.
-
-## Project Structure
-
-- `app.go` - Go backend using Miller library directly for data transformations
-- `frontend/src/App.jsx` - Main React application
-- `frontend/src/components/` - React components
-  - `InputSection.jsx` - Input data and format configuration
-  - `VerbBuilder.jsx` - Transformation pipeline builder
-  - `OutputPreview.jsx` - Output display and export
-- `.github/workflows/build.yml` - GitHub Actions CI/CD for multi-platform builds
 
 ## License
 
@@ -176,16 +155,6 @@ Older logs are automatically rotated and compressed:
 - Logs are kept for 30 days
 - Maximum 5 backup files are retained
 - Each file is limited to 10MB
-
-### Enabling Debug Logging
-
-To enable more verbose logging for troubleshooting:
-
-1. Edit `logger.go` and change the log level:
-   ```go
-   Log.SetLevel(logrus.DebugLevel)  // Change from InfoLevel to DebugLevel
-   ```
-2. Rebuild the application
 
 ### Common Issues
 
